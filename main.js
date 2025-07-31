@@ -2,6 +2,8 @@ const { Telegraf, Markup, session } = require('telegraf')
 const messageHandler = require('./modules/message')
 const propertyHandler = require('./modules/property_dataset/handler')
 const propertyMessage = require('./modules/property_dataset/message')
+const analyzeHandler = require('./modules/analyze_dataset/handler')
+const analyzeMessage = require('./modules/analyze_dataset/message')
 const { menuOptions } = require('./configs/const')
 const fs = require('fs')
 
@@ -30,6 +32,10 @@ bot.on('message', async (ctx) => {
     } else if (ctx.message.document || ctx.message.photo || ctx.message.video) {
         const fileInfo = await propertyHandler.handlerFileProperty(ctx)
         if (fileInfo) propertyMessage.messageProperty(ctx, fileInfo)
+
+        // Excel Analyze
+        const analyzeSheetInfo = await analyzeHandler.handlerAnalyzeSheet(ctx, fileInfo)
+        if (analyzeSheetInfo) analyzeMessage.messageAnalyzeSheet(ctx, analyzeSheetInfo)
     } else {
         ctx.reply("Unsupported message type. Please send a command or a file")
     }
