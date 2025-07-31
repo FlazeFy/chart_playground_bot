@@ -4,6 +4,8 @@ const propertyHandler = require('./modules/property_dataset/handler')
 const propertyMessage = require('./modules/property_dataset/message')
 const analyzeHandler = require('./modules/analyze_dataset/handler')
 const analyzeMessage = require('./modules/analyze_dataset/message')
+const summaryHandler = require('./modules/summary_dataset/handler')
+const summaryMessage = require('./modules/summary_dataset/message')
 const { menuOptions } = require('./configs/const')
 const fs = require('fs')
 
@@ -36,6 +38,10 @@ bot.on('message', async (ctx) => {
         // Excel Analyze
         const analyzeSheetInfo = await analyzeHandler.handlerAnalyzeSheet(ctx, fileInfo)
         if (analyzeSheetInfo) analyzeMessage.messageAnalyzeSheet(ctx, analyzeSheetInfo)
+
+        // Excel Summary
+        const summaryContextTotal = await summaryHandler.handlerSummaryContextTotal(ctx, fileInfo)
+        if (summaryContextTotal) summaryMessage.messageSummaryContextTotal(ctx, summaryContextTotal)
     } else {
         ctx.reply("Unsupported message type. Please send a command or a file")
     }

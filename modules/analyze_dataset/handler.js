@@ -1,23 +1,10 @@
 const axios = require('axios')
 const XLSX = require('xlsx')
-const fs = require('fs')
-const path = require('path')
+const { validateExcel } = require('../../helpers/validator')
 
 const handlerAnalyzeSheet = async (ctx, fileInfo) => {
+    validateExcel(ctx,fileInfo)
     const doc = ctx.message.document
-    if (!doc) {
-        ctx.reply("Unsupported file type")
-        return
-    }
-
-    const fileName = fileInfo.name
-    const isExcel = fileName.endsWith('.xlsx') || fileName.endsWith('.xls')
-    ctx.session.fileInfo = fileInfo
-
-    if (!isExcel) {
-        ctx.reply("The uploaded file is not an Excel file (.xlsx or .xls)")
-        return
-    }
 
     // Get Telegram file
     const fileLink = await ctx.telegram.getFileLink(doc)
