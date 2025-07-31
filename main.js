@@ -1,4 +1,8 @@
 const { Telegraf, Markup, session } = require('telegraf')
+const messageHandler = require('./modules/message')
+const propertyHandler = require('./modules/property_dataset/handler')
+const propertyMessage = require('./modules/property_dataset/message')
+const { menuOptions } = require('./configs/const')
 const fs = require('fs')
 
 // const configFile = fs.readFileSync('./configs/telegram.json', 'utf8')
@@ -12,49 +16,27 @@ const conf = JSON.parse(configFile)
 const bot = new Telegraf(conf.TOKEN)
 bot.use(session())
 
-const menuOptions = [
-    '/Show Export History',
-];
-
-bot.start( async (ctx) => {
-    const userId = ctx.from.id
+bot.start((ctx) => {
     ctx.reply(`Please choose an option in Menu:`, 
         Markup.keyboard(menuOptions.map(option => [option])).resize()
-    );
-});
+    )
+})
 
 bot.on('message', async (ctx) => {
-    // Respond / Presenting data
-    const present_respond = ['Showing','Let me show you the',"Here's the","I got the","See this","I gathered","I found"]
-
-    const telegramId = ctx.from.id
-
     if (!ctx.session) ctx.session = {}
 
-    if (ctx.message.text) {
-        const message = ctx.message.text
-        const idx_rand_present = generateRandomNumber(1,present_respond.length)
-
-        if(message[0] == "/"){
-            const index = menuOptions.indexOf(message)
-
-            switch (index) {
-                case 0: // Show Export History
-                    // ....
-                    break
-
-                default:
-                    ctx.reply(`Sorry I'dont know your command`)
-                    break
-            }
-        } else {
-            ctx.reply(`Unknown command. Please try again`)
-        }
-    } 
-});
+    if (ctx.message.text && ctx.message.text.startsWith("/")) {
+        await messageHandler.messageCommandMenu(ctx)
+    } else if (ctx.message.document || ctx.message.photo || ctx.message.video) {
+        const fileInfo = await propertyHandler.handlerFileProperty(ctx)
+        if (fileInfo) propertyMessage.messageProperty(ctx, fileInfo)
+    } else {
+        ctx.reply("Unsupported message type. Please send a command or a file")
+    }
+})
 
 bot.launch().then(() => {
     console.log('Bot started')
 }).catch((err) => {
     console.error('Error starting bot:', err)
-});
+})
