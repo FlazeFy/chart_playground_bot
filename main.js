@@ -45,7 +45,8 @@ bot.on('message', async (ctx) => {
         if (summaryContextTotal) summaryMessage.messageSummaryContextTotal(ctx, summaryContextTotal)
 
         // Excel Visualization
-        await visualizeHandler.visualizeSummaryHandler(ctx, fileInfo)
+        await visualizeHandler.visualizeBarChartHandler(ctx, fileInfo)
+        await visualizeHandler.visualizePieChartHandler(ctx, fileInfo)
     } else {
         ctx.reply("Unsupported message type. Please send a command or a file")
     }
