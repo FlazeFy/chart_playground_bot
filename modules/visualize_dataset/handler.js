@@ -1,5 +1,8 @@
 const { ucEachWord } = require("../../helpers/converter")
-const { handlerSummaryContextTotal, handlerSummaryColumnsPeriodicToMonthTotal } = require("../summary_dataset/handler")
+const { handlerSummaryContextTotal } = require("../summary_dataset/handler")
+const PptxGenJS = require("pptxgenjs");
+const axios = require("axios");
+const fs = require("fs");
 
 const visualizeBarChartHandler = async (ctx, fileInfo) => {
     const sheetDetails = await handlerSummaryContextTotal(ctx, fileInfo)
@@ -88,9 +91,7 @@ const visualizePieChartHandler = async (ctx, fileInfo) => {
     }
 };
 
-const visualizePeriodicLineChartHandler = async (ctx, fileInfo, type) => {
-    const sheetDetails = await handlerSummaryColumnsPeriodicToMonthTotal(ctx, fileInfo)
-
+const visualizePeriodicLineChartHandler = async (ctx, type, sheetDetails) => {
     for (const sheet of sheetDetails) {
         for (const col of sheet.columns) {
             if (col.mostContext.length === 0) continue
@@ -132,6 +133,68 @@ const visualizePeriodicLineChartHandler = async (ctx, fileInfo, type) => {
     }
 };
 
+const visualizeBarChartToPptxHandler = async (ctx, fileInfo) => {
+    const sheetDetails = await handlerSummaryContextTotal(ctx, fileInfo)
+
+    let pptx = new PptxGenJS()
+    for (const sheet of sheetDetails) {
+        for (const col of sheet.columns) {
+            if (col.mostContext.length === 0) continue
+
+            const labels = col.mostContext.map(item => item.context)
+            const values = col.mostContext.map(item => item.total)
+
+            const chartConfig = {
+                type: "bar",
+                data: {
+                    labels,
+                    datasets: [
+                        {
+                            label: `Comparison of ${ucEachWord(col.columnName.replaceAll('_',' '))}`,
+                            data: values
+                        }
+                    ]
+                },
+                options: {
+                    plugins: {
+                        legend: { display: false },
+                        title: { display: true, text: `${sheet.sheetName} - ${col.columnName}` }
+                    }
+                }
+            };
+
+            // Generate chart Quickchart
+            const chartUrl = `https://quickchart.io/chart?c=${encodeURIComponent(
+                JSON.stringify(chartConfig)
+            )}`;
+
+            // Fetch image buffer
+            const res = await axios.get(chartUrl, { responseType: "arraybuffer" })
+            const imgBase64 = Buffer.from(res.data, "binary").toString("base64")
+
+            // Add slide
+            let slide = pptx.addSlide()
+            slide.addText(`${sheet.sheetName} - ${col.columnName}`, {
+                x: 0.5,
+                y: 0.3,
+                fontSize: 18,
+                bold: true
+            });
+            slide.addImage({
+                data: "data:image/png;base64," + imgBase64, x: 0.5, y: 1, w: 8, h: 4.5
+            });
+        }
+    }
+
+    // Save PPTX 
+    const filename = `charts_${Date.now()}.pptx`
+    await pptx.writeFile({ fileName: filename })
+
+    // Send pptx & clean up
+    await ctx.replyWithDocument({ source: filename })
+    fs.unlinkSync(filename)
+};
+
 module.exports = {
-    visualizeBarChartHandler, visualizePieChartHandler, visualizePeriodicLineChartHandler
+    visualizeBarChartHandler, visualizePieChartHandler, visualizePeriodicLineChartHandler, visualizeBarChartToPptxHandler
 };
