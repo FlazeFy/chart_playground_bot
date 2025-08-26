@@ -6,6 +6,7 @@ const analyzeHandler = require('./modules/analyze_dataset/handler')
 const analyzeMessage = require('./modules/analyze_dataset/message')
 const summaryHandler = require('./modules/summary_dataset/handler')
 const summaryMessage = require('./modules/summary_dataset/message')
+const visualizeHandler = require('./modules/visualize_dataset/handler')
 const { menuOptions } = require('./configs/const')
 const fs = require('fs')
 
@@ -42,6 +43,9 @@ bot.on('message', async (ctx) => {
         // Excel Summary
         const summaryContextTotal = await summaryHandler.handlerSummaryContextTotal(ctx, fileInfo)
         if (summaryContextTotal) summaryMessage.messageSummaryContextTotal(ctx, summaryContextTotal)
+
+        // Excel Visualization
+        await visualizeHandler.visualizeSummaryHandler(ctx, fileInfo)
     } else {
         ctx.reply("Unsupported message type. Please send a command or a file")
     }
