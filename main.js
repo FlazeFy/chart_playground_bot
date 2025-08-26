@@ -49,6 +49,7 @@ bot.on('message', async (ctx) => {
         // Excel Visualization
         await visualizeHandler.visualizeBarChartHandler(ctx, fileInfo)
         await visualizeHandler.visualizePieChartHandler(ctx, fileInfo)
+        await visualizeHandler.visualizePeriodicLineChartHandler(ctx, fileInfo, 'Monthly')
     } else {
         ctx.reply("Unsupported message type. Please send a command or a file")
     }
