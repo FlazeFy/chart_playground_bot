@@ -45,6 +45,8 @@ bot.on('message', async (ctx) => {
         if (summaryContextTotal) summaryMessage.messageSummaryContextTotal(ctx, summaryContextTotal,' Context Total', 'Non-Numeric')
         const summaryContextMonthTotal = await summaryHandler.handlerSummaryColumnsPeriodicToMonthTotal(ctx, fileInfo)
         if (summaryContextMonthTotal) summaryMessage.messageSummaryContextTotal(ctx, summaryContextMonthTotal, ' Monthly Total', 'Periodic')
+        const summaryContextYearTotal = await summaryHandler.handlerSummaryColumnsPeriodicToYearTotal(ctx, fileInfo)
+        if (summaryContextYearTotal) summaryMessage.messageSummaryContextTotal(ctx, summaryContextYearTotal, ' Year Total', 'Periodic')
 
         // Excel Visualization
         await visualizeHandler.visualizeBarChartHandler(ctx, fileInfo)

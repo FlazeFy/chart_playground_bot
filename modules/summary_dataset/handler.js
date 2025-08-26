@@ -158,7 +158,90 @@ const handlerSummaryColumnsPeriodicToMonthTotal = async (ctx, fileInfo) => {
     return sheetDetails
 }
 
+const handlerSummaryColumnsPeriodicToYearTotal = async (ctx, fileInfo) => {
+    validateExcel(ctx, fileInfo)
+    const doc = ctx.message.document
+
+    // Get Telegram file
+    const fileLink = await ctx.telegram.getFileLink(doc)
+    const response = await axios.get(fileLink.href, { responseType: 'arraybuffer' })
+
+    // Read Excel workbook
+    const workbook = XLSX.read(response.data, { type: 'buffer' })
+
+    const sheetDetails = workbook.SheetNames.map(sheetName => {
+        const sheet = workbook.Sheets[sheetName]
+        const data = XLSX.utils.sheet_to_json(sheet, { header: 1 }) 
+
+        if (data.length === 0) return { sheetName, columns: [] }
+
+        const colCount = data[0].length
+        const headerRow = data[0]
+        const columnSummary = []
+
+        for (let colIndex = 0; colIndex < colCount; colIndex++) {
+            const values = []
+            let validDateCount = 0
+            let nonEmptyCount = 0
+
+            for (let rowIndex = 1; rowIndex < data.length; rowIndex++) {
+                const cell = data[rowIndex][colIndex]
+                if (!cell) continue
+                nonEmptyCount++
+
+                let parsedDate = null
+
+                if (cell instanceof Date) {
+                    parsedDate = cell
+                } else if (typeof cell === "string") {
+                    const d = new Date(cell)
+                    if (!isNaN(d)) parsedDate = d
+                } else if (typeof cell === "number") {
+                    // Only treat as Excel date if it's large enough (after 1970)
+                    if (cell >= 25569) { // Excel serial for 1970-01-01
+                        const parsed = XLSX.SSF.parse_date_code(cell)
+                        if (parsed && parsed.y >= 1900 && parsed.y <= 2100) {
+                            parsedDate = new Date(parsed.y, parsed.m - 1, parsed.d, parsed.H, parsed.M, parsed.S)
+                        }
+                    }
+                }
+
+                if (parsedDate) {
+                    validDateCount++
+                    values.push(parsedDate)
+                }
+            }
+
+            // Keep column only if all non-empty values were valid dates
+            if (nonEmptyCount > 0 && validDateCount === nonEmptyCount) {
+                const yearCount = {}
+
+                values.forEach(d => {
+                    const year = d.getFullYear()
+                    if (!yearCount[year]) yearCount[year] = 0
+                    yearCount[year]++
+                })
+
+                const mostContext = Object.keys(yearCount).map(y => ({
+                    context: y,
+                    total: yearCount[y]
+                }))
+
+                columnSummary.push({
+                    columnIndex: colIndex,
+                    columnName: headerRow[colIndex] || `Col : ${colIndex + 1}`,
+                    mostContext
+                })
+            }
+        }
+
+        return { sheetName, columns: columnSummary }
+    })
+
+    return sheetDetails
+}
+
 
 module.exports = {
-    handlerSummaryContextTotal, handlerSummaryColumnsPeriodicToMonthTotal
+    handlerSummaryContextTotal, handlerSummaryColumnsPeriodicToMonthTotal, handlerSummaryColumnsPeriodicToYearTotal
 }
