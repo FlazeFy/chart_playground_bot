@@ -8,15 +8,11 @@ const summaryHandler = require('./modules/summary_dataset/handler')
 const summaryMessage = require('./modules/summary_dataset/message')
 const visualizeHandler = require('./modules/visualize_dataset/handler')
 const { menuOptions } = require('./configs/const')
-const fs = require('fs')
+require('dotenv').config();
 
-// const configFile = fs.readFileSync('./configs/telegram.json', 'utf8')
-const configFile = fs.readFileSync('./configs/telegram_stage.json', 'utf8')
-const conf = JSON.parse(configFile)
-
-// Helpers
-
-// Modules
+const conf = {
+    TOKEN: process.env.TOKEN,
+};
 
 const bot = new Telegraf(conf.TOKEN)
 bot.use(session())
